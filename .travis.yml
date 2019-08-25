@@ -5,4 +5,5 @@ install:
   - pip install pipenv
   - pipenv install
 script:
+  - pipenv run python src/generator/python/main.py --protobufs-root src/generator/resources -v
   - pipenv run python setup.py test
