@@ -100,3 +100,23 @@ class Scanner:
     def peek(self):
         self.lookahead = self.get()
         return self.lookahead
+
+    def expect_in(self, kinds):
+        t = self.get()
+        assert(t.kind in kinds)
+        return t
+
+    def expect(self, kind):
+        return self.expect_in([kind])
+
+    def __skip(self, predicate):
+        if predicate(self.peek()):
+            self.get()
+            return True
+        return False
+
+    def skip(self, kind):
+        return self.__skip(lambda t: t.kind == kind)
+
+    def skip_lexeme(self, lexeme):
+        return self.__skip(lambda t: t.lexeme == lexeme)

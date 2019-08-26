@@ -14,22 +14,16 @@
 import argparse
 import logging
 import os
-from protobuf.scanner import Scanner, TokenKind
+from protobuf.parser import parse
 import sys
 
 
-def scan_file(file_path, go_verbose):
+def parse_file(file_path, go_verbose):
     if go_verbose:
         logging.basicConfig(level=logging.INFO)
     with open(file_path) as f:
         logging.info('## ' + file_path)
-        scanner = Scanner(f.read())
-        while scanner.peek():
-            t = scanner.get()
-            if go_verbose:
-                if t.lexeme == 'message' and scanner.preceding_comments:
-                    logging.info('# ' + '\n# '.join(scanner.preceding_comments))
-                logging.info('[%s] %s' % (t.kind, t.lexeme))
+        logging.info(parse(f.read()))
 
 
 def main(argv):
@@ -44,7 +38,7 @@ def main(argv):
 
     for dir_name, _, file_names in os.walk(args.protobufs_root):
         for file_name in file_names:
-            scan_file('%s/%s' % (dir_name, file_name), args.v)
+            parse_file('%s/%s' % (dir_name, file_name), args.v)
 
 
 if __name__ == '__main__':
