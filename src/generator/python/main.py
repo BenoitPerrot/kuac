@@ -12,18 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import argparse
+from project import ProjectBuilder
 import logging
 import os
 from protobuf.parser import parse
 import sys
 
 
-def parse_file(file_path, go_verbose):
+def print_project(project):
+    for package_name, package in project.packages.items():
+        for message in package.messages:
+            print(message.full_id)
+            for field in message.fields:
+                if field.resolved_type:
+                    print('  -> %s' % str(field.resolved_type.full_id))
+
+
+def build_project(file_paths, go_verbose):
     if go_verbose:
         logging.basicConfig(level=logging.INFO)
-    with open(file_path) as f:
-        logging.info('## ' + file_path)
-        logging.info(parse(f.read()))
+    project_builder = ProjectBuilder()
+    for file_path in file_paths:
+        with open(file_path) as f:
+            logging.info('## ' + file_path)
+            project_builder.add(parse(f.read()))
+    if go_verbose:
+        print_project(project_builder.build())
 
 
 def main(argv):
@@ -36,9 +50,11 @@ def main(argv):
                         required=True)
     args = parser.parse_args(argv)
 
-    for dir_name, _, file_names in os.walk(args.protobufs_root):
-        for file_name in file_names:
-            parse_file('%s/%s' % (dir_name, file_name), args.v)
+    build_project([
+        '%s/%s' % (dir_name, file_name)
+        for dir_name, _, file_names in os.walk(args.protobufs_root)
+        for file_name in file_names
+    ], args.v)
 
 
 if __name__ == '__main__':
