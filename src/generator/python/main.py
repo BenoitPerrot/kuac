@@ -29,16 +29,16 @@ def build_project(file_paths):
     return project_builder.build()
 
 
-def generate_classes(file_paths, go_verbose):
+def generate_classes(file_paths, generated_root, go_verbose):
     if go_verbose:
         logging.basicConfig(level=logging.INFO)
     project = build_project(file_paths)
-    python_classes = {n: generate_class(m) for n, m in project.messages.items()}
-    if go_verbose:
-        for n, c in python_classes.items():
-            print('# ' + n)
-            print(c)
-            print()
+    for n, m in project.messages.items():
+        c = generate_class(m)
+        dir_name = os.path.join(generated_root, *m.package.full_id.path, m.package.full_id.base)
+        os.makedirs(dir_name, exist_ok=True)
+        with open(os.path.join(dir_name, m.name + '.py'), 'w') as f:
+            f.write(c)
 
 
 def main(argv):
@@ -49,13 +49,16 @@ def main(argv):
     parser.add_argument('--protobufs-root',
                         help='Path of the root directory where protobuf schemas are located',
                         required=True)
+    parser.add_argument('--generated-root',
+                        help='Path of the root directory where protobuf schemas are located',
+                        required=True)
     args = parser.parse_args(argv)
 
     generate_classes([
         '%s/%s' % (dir_name, file_name)
         for dir_name, _, file_names in os.walk(args.protobufs_root)
         for file_name in file_names
-    ], args.v)
+    ], args.generated_root, args.v)
 
 
 if __name__ == '__main__':

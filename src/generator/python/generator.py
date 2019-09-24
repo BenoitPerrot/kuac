@@ -51,7 +51,7 @@ class {class_name}:
                  ):
         {ctor_body}
 '''.format(
-        class_name=''.join([n.capitalize() for n in msg.package.full_id.path + [msg.package.full_id.base]]) + msg.name,
+        class_name=msg.name,
         ctor_args=(',\n' + ' ' * 17).join(ctor_args),
         ctor_body=('\n' + ' ' * 8).join(ctor_attrs_init) if 0 < len(ctor_attrs_init) else 'pass'
     )
