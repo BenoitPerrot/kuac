@@ -13,31 +13,32 @@
 # limitations under the License.
 import argparse
 from project import ProjectBuilder
+from generator import generate_class
 import logging
 import os
 from protobuf.parser import parse
 import sys
 
 
-def print_project(project):
-    for package_name, package in project.packages.items():
-        for message in package.messages:
-            print(message.full_id)
-            for field in message.fields:
-                if field.resolved_type:
-                    print('  -> %s' % str(field.resolved_type.full_id))
-
-
-def build_project(file_paths, go_verbose):
-    if go_verbose:
-        logging.basicConfig(level=logging.INFO)
+def build_project(file_paths):
     project_builder = ProjectBuilder()
     for file_path in file_paths:
         with open(file_path) as f:
             logging.info('## ' + file_path)
             project_builder.add(parse(f.read()))
+    return project_builder.build()
+
+
+def generate_classes(file_paths, go_verbose):
     if go_verbose:
-        print_project(project_builder.build())
+        logging.basicConfig(level=logging.INFO)
+    project = build_project(file_paths)
+    python_classes = {n: generate_class(m) for n, m in project.messages.items()}
+    if go_verbose:
+        for n, c in python_classes.items():
+            print('# ' + n)
+            print(c)
+            print()
 
 
 def main(argv):
@@ -50,7 +51,7 @@ def main(argv):
                         required=True)
     args = parser.parse_args(argv)
 
-    build_project([
+    generate_classes([
         '%s/%s' % (dir_name, file_name)
         for dir_name, _, file_names in os.walk(args.protobufs_root)
         for file_name in file_names
