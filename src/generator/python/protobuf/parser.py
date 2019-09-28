@@ -63,7 +63,7 @@ def parse(text):
 
     def parse_after_message(scanner):
         def parse_message_field():
-            desc = scanner.preceding_comments
+            desc = [s.lstrip() for s in scanner.preceding_comments]
             label = scanner.peek().lexeme
             is_optional = label == 'optional'
             is_repeated = label == 'repeated'
