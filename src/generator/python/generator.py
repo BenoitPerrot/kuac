@@ -36,25 +36,51 @@ def generate_field_name(f: Field):
     return f.name + '_' if f.name in python_keywords + python_builtins else camel_case_to_snake_case(f.name)
 
 
+def generate_field_type_name(f: Field):
+    primitive_type_name_to_python = {
+        'bool': ('bool', []),
+        'int32': ('int', []),
+        'int64': ('int', []),
+        'string': ('str', []),
+        'map': ('dict', []),
+        'IntOrString': ('Union[int, str]', ['from typing import Union'])
+    }
+    (field_type_name, import_statements) = \
+        primitive_type_name_to_python.get(f.absolute_type_id.base,
+                                          (f.absolute_type_id.base, [] if f.resolved_type is None else [
+                                              'from kuac.models.{namespace} import {classname}'.format(
+                                                  namespace=str(f.resolved_type.full_id),
+                                                  classname=f.resolved_type.full_id.base
+                                              )
+                                          ]))
+    return ('List[' + field_type_name + ']', import_statements + ['from typing import List']) if f.is_repeated else\
+        (field_type_name, import_statements)
+
+
 def generate_ctor(msg: Message):
+    import_statements = set()
     ctor_args = ['self']
     ctor_opt_args = []
     ctor_attrs_init = []
     for f in msg.fields:
         field_name = generate_field_name(f)
-        (ctor_opt_args if f.is_optional else ctor_args).append(field_name)
+        field_type_name, field_import_statements = generate_field_type_name(f)
+        import_statements.update(field_import_statements)
+        (ctor_opt_args if f.is_optional else ctor_args).append(field_name + ': ' + field_type_name)
         ctor_attrs_init.append('self.' + field_name + ' = ' + field_name)
-    return ctor_args + [a + '=None' for a in ctor_opt_args], ctor_attrs_init
+    return import_statements, ctor_args + [a + ' = None' for a in ctor_opt_args], ctor_attrs_init
 
 
 def generate_class(msg: Message):
-    ctor_args, ctor_attrs_init = generate_ctor(msg)
+    import_statements, ctor_args, ctor_attrs_init = generate_ctor(msg)
     return '''\
+{imports}\
 class {class_name}:
     def __init__({ctor_args}
                  ):
         {ctor_body}
 '''.format(
+        imports='\n'.join(sorted(import_statements)) + ('\n\n\n' if 0 < len(import_statements) else ''),
         class_name=msg.name,
         ctor_args=(',\n' + ' ' * 17).join(ctor_args),
         ctor_body=('\n' + ' ' * 8).join(ctor_attrs_init) if 0 < len(ctor_attrs_init) else 'pass'
