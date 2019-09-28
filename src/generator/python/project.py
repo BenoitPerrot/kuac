@@ -25,20 +25,17 @@ class Package:
 
 class Field:
     def __init__(self,
-                 is_optional: bool,
                  is_repeated: bool,
-                 is_required: bool,
                  absolute_type_id: ast.FullId,
                  name: str,
                  value: int,
                  desc: List[str]):
-        self.is_optional = is_optional
         self.is_repeated = is_repeated
-        self.is_required = is_required
         self.absolute_type_id = absolute_type_id
         self.name = name
         self.value = value
         self.desc = desc
+        self.is_optional = '+optional' in desc
         # mutable:
         self.resolved_type = None
 
@@ -83,9 +80,7 @@ class ProjectBuilder:
             elif isinstance(n, ast.MessageDeclaration):
                 fields = [
                     Field(
-                        f.is_optional,
                         f.is_repeated,
-                        f.is_required,
                         f.type_id if 0 < len(f.type_id.path) else package.full_id.join(f.type_id.base),
                         f.name,
                         f.value,
