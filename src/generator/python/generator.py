@@ -37,10 +37,14 @@ def generate_field_name(f: Field):
 
 
 def generate_ctor(msg: Message):
-    field_names = [generate_field_name(f) for f in msg.fields]
-    ctor_args = ['self'] + [field_name for field_name in field_names]
-    ctor_attrs_init = ['self.' + field_name + ' = ' + field_name for field_name in field_names]
-    return ctor_args, ctor_attrs_init
+    ctor_args = ['self']
+    ctor_opt_args = []
+    ctor_attrs_init = []
+    for f in msg.fields:
+        field_name = generate_field_name(f)
+        (ctor_opt_args if f.is_optional else ctor_args).append(field_name)
+        ctor_attrs_init.append('self.' + field_name + ' = ' + field_name)
+    return ctor_args + [a + '=None' for a in ctor_opt_args], ctor_attrs_init
 
 
 def generate_class(msg: Message):
