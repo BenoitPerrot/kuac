@@ -26,7 +26,7 @@ jobs:
 
     - name: Generate
       run: |
-        pipenv run python src/generator/python/main.py --protobufs-root src/generator/resources --generated-root generated/models -v
+        pipenv run python src/generator/python/main.py --protobufs-root src/generator/resources --generated-root src/main/kuac/models -v
 
     - name: Test
       run: |
