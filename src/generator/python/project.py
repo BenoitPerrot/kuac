@@ -48,6 +48,9 @@ class Message:
         self.full_id = package.full_id.join(name)
 
 
+primitive_types = ['bytes', 'string', 'int32', 'int64', 'bool', 'map']
+
+
 class Project:
     def __init__(self, packages: Dict[str, Package]):
         self.packages = packages
@@ -58,7 +61,7 @@ class Project:
         for p in packages.values():
             for m in p.messages:
                 for f in m.fields:
-                    if str(f.absolute_type_id.base) not in ['bytes', 'string', 'int32', 'int64', 'bool', 'map']:
+                    if str(f.absolute_type_id.base) not in primitive_types:
                         f.resolved_type = self.find_message(f.absolute_type_id)
 
     def find_message(self, type_id: ast.FullId):
@@ -81,7 +84,8 @@ class ProjectBuilder:
                 fields = [
                     Field(
                         f.is_repeated,
-                        f.type_id if 0 < len(f.type_id.path) else package.full_id.join(f.type_id.base),
+                        f.type_id if 0 < len(f.type_id.path) or f.type_id.base in primitive_types
+                        else package.full_id.join(f.type_id.base),
                         f.name,
                         f.value,
                         f.desc
