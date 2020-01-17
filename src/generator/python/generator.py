@@ -55,18 +55,19 @@ def generate_field_type_name(f: Field):
         'bool': ('bool', []),
         'int32': ('int', []),
         'int64': ('int', []),
+        'bytes': ('bytes', []),
         'string': ('str', []),
         'map': ('dict', []),
         'IntOrString': ('Union[int, str]', ['from typing import Union'])
     }
     (field_type_name, import_statements) = \
-        primitive_type_name_to_python.get(f.absolute_type_id.base,
-                                          (f.absolute_type_id.base, [] if f.resolved_type is None else [
-                                              'from kuac.models.{namespace} import {classname}'.format(
-                                                  namespace=str(f.resolved_type.full_id),
-                                                  classname=f.resolved_type.full_id.base
-                                              )
-                                          ]))
+        primitive_type_name_to_python.get(f.absolute_type_id.base) or \
+        (f.absolute_type_id.base, [
+          'from kuac.models.{namespace} import {classname}'.format(
+              namespace=str(f.resolved_type.full_id),
+              classname=f.resolved_type.full_id.base
+          )
+        ])
     return ('List[' + field_type_name + ']', import_statements + ['from typing import List']) if f.is_repeated else\
         (field_type_name, import_statements)
 
